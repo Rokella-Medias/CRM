@@ -42,18 +42,21 @@ export const Auth: React.FC = () => {
     e.preventDefault();
     setError('');
 
+    const cleanEmail = email.trim();
+    const cleanPassword = password.trim();
+
     // Input Validations
-    if (!email || !password) {
+    if (!cleanEmail || !cleanPassword) {
       setError('Please fill in all credentials fields.');
       return;
     }
 
-    if (!validateEmail(email)) {
+    if (!validateEmail(cleanEmail)) {
       setError('Please enter a valid email address.');
       return;
     }
 
-    if (password.length < 6) {
+    if (cleanPassword.length < 6) {
       setError('Password must be at least 6 characters long.');
       return;
     }
@@ -67,15 +70,15 @@ export const Auth: React.FC = () => {
 
     try {
       if (isLogin) {
-        const success = await login(email, password);
+        const success = await login(cleanEmail, cleanPassword);
         if (success) {
-          triggerToast('Welcome back, ' + email + '!', 'success');
+          triggerToast('Welcome back, ' + cleanEmail + '!', 'success');
         } else {
           setError('Invalid email address or password.');
           triggerToast('Authentication failed.', 'error');
         }
       } else {
-        const success = await signup(name.trim(), email, password, role);
+        const success = await signup(name.trim(), cleanEmail, cleanPassword, role);
         if (success) {
           triggerToast('Account registered successfully!', 'success');
         } else {
