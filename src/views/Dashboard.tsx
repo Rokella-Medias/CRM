@@ -1,6 +1,6 @@
 import React from 'react';
 import { useCrm } from '../context/CrmContext';
-import { DollarSign, UserPlus, Briefcase, TrendingUp, ArrowUpRight, CheckCircle2, Calendar, Trash2, User } from 'lucide-react';
+import { IndianRupee, UserPlus, Briefcase, TrendingUp, ArrowUpRight, CheckCircle2, Calendar, Trash2, User } from 'lucide-react';
 import { Line, Doughnut } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -91,7 +91,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
         grid: { color: gridColor },
         ticks: {
           color: textColor,
-          callback: (value: any) => '$' + (value >= 1000 ? value / 1000 + 'k' : value)
+          callback: (value: any) => '₹' + (value >= 100000 ? (value / 100000).toFixed(1) + 'L' : value >= 1000 ? (value / 1000).toFixed(0) + 'k' : value)
         }
       }
     }
@@ -148,12 +148,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           <div className="flex items-center justify-between">
             <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">Total Revenue</span>
             <div className="w-10 h-10 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-              <DollarSign className="w-5 h-5" />
+              <IndianRupee className="w-5 h-5" />
             </div>
           </div>
           <div className="mt-2 flex items-baseline justify-between">
             <span className="text-2xl font-extrabold font-heading text-slate-800 dark:text-slate-100">
-              ${totalRevenue.toLocaleString()}
+              ₹{totalRevenue.toLocaleString('en-IN')}
             </span>
             <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5">
               <ArrowUpRight className="w-3.5 h-3.5" /> +12.5%

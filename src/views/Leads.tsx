@@ -180,7 +180,7 @@ export const Leads: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4.5 text-slate-700 dark:text-slate-300 font-medium">{lead.company}</td>
-                      <td className="px-6 py-4.5 text-slate-900 dark:text-slate-100 font-bold">${lead.value.toLocaleString()}</td>
+                      <td className="px-6 py-4.5 text-slate-900 dark:text-slate-100 font-bold">₹{lead.value.toLocaleString('en-IN')}</td>
                       <td className="px-6 py-4.5">
                         <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold uppercase ${getStatusBadge(lead.status)}`}>
                           {lead.status}

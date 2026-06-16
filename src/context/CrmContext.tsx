@@ -71,77 +71,77 @@ interface CrmContextType {
 const demoLeads: Lead[] = [
   {
     id: 'lead-1',
-    name: 'Sarah Connor',
-    company: 'Cyberdyne Systems',
-    value: 85000,
-    email: 'sconnor@cyberdyne.co',
-    phone: '+1 (555) 901-2834',
+    name: 'Amit Sharma',
+    company: 'Vardhman Textiles',
+    value: 850000,
+    email: 'amit@vardhmangroup.com',
+    phone: '+91 98765 43210',
     status: 'proposal',
     priority: 'high',
     createdDate: '2026-05-12'
   },
   {
     id: 'lead-2',
-    name: 'Bruce Wayne',
-    company: 'Wayne Enterprises',
-    value: 150000,
-    email: 'bruce@waynecorp.com',
-    phone: '+1 (555) 100-1939',
+    name: 'Rajesh Patel',
+    company: 'Arvind Mills',
+    value: 1500000,
+    email: 'rajesh@arvindmills.com',
+    phone: '+91 99887 76655',
     status: 'won',
     priority: 'high',
     createdDate: '2026-04-18'
   },
   {
     id: 'lead-3',
-    name: 'Clark Kent',
-    company: 'Daily Planet',
-    value: 12000,
-    email: 'ckent@dailyplanet.org',
-    phone: '+1 (555) 234-9876',
+    name: 'Sanjay Mehta',
+    company: 'Welspun India',
+    value: 120000,
+    email: 'sanjay@welspun.com',
+    phone: '+91 98223 34455',
     status: 'new',
     priority: 'low',
     createdDate: '2026-06-02'
   },
   {
     id: 'lead-4',
-    name: 'Tony Stark',
-    company: 'Stark Industries',
-    value: 250000,
-    email: 'tony@stark.com',
-    phone: '+1 (555) 300-3000',
+    name: 'Vijay Singhania',
+    company: 'Raymond Garments',
+    value: 2500000,
+    email: 'vijay@raymond.in',
+    phone: '+91 91234 56789',
     status: 'won',
     priority: 'high',
     createdDate: '2026-03-25'
   },
   {
     id: 'lead-5',
-    name: 'Peter Parker',
-    company: 'Daily Bugle',
-    value: 4500,
-    email: 'pparker@dailybugle.com',
-    phone: '+1 (555) 987-6543',
+    name: 'Ramesh Nair',
+    company: 'Page Industries',
+    value: 45000,
+    email: 'ramesh@pageind.com',
+    phone: '+91 94445 55667',
     status: 'contacted',
     priority: 'low',
     createdDate: '2026-06-10'
   },
   {
     id: 'lead-6',
-    name: 'Diana Prince',
-    company: 'The Louvre Museum',
-    value: 45050,
-    email: 'diana@louvre.fr',
-    phone: '+33 (1) 4020-5317',
+    name: 'Deepak Gupta',
+    company: 'Alok Industries',
+    value: 450500,
+    email: 'deepak@alokind.com',
+    phone: '+91 97778 88990',
     status: 'qualified',
     priority: 'medium',
     createdDate: '2026-05-30'
   },
   {
     id: 'lead-7',
-    name: 'Barry Allen',
-    company: 'Central City Lab',
-    value: 18000,
-    email: 'ballen@centralcitypd.gov',
-    phone: '+1 (555) 555-1212',
+    name: 'Rajinder Khanna',
+    company: 'Trident Weaving',
+    value: 180000,
+    email: 'rajinder@tridentgroup.co.in',
+    phone: '+91 95556 66778',
     status: 'lost',
     priority: 'medium',
     createdDate: '2026-04-05'
@@ -151,8 +151,8 @@ const demoLeads: Lead[] = [
 const demoTasks: Task[] = [
   {
     id: 'task-1',
-    title: 'Review Cyberdyne tech specs',
-    desc: 'Review integration specs with the Engineering Lead before finalizing proposal.',
+    title: 'Review Vardhman tech specs',
+    desc: 'Review quality standards and order parameters with the Production Lead before finalizing proposal.',
     status: 'review',
     priority: 'high',
     leadId: 'lead-1',
@@ -160,8 +160,8 @@ const demoTasks: Task[] = [
   },
   {
     id: 'task-2',
-    title: 'Stark Industries onboarding',
-    desc: 'Set up credentials and kick-off meeting for standard SaaS setup.',
+    title: 'Raymond Garments onboarding',
+    desc: 'Register bank details and execute the credit terms agreement for bulk order dispatch.',
     status: 'progress',
     priority: 'high',
     leadId: 'lead-4',
@@ -169,8 +169,8 @@ const demoTasks: Task[] = [
   },
   {
     id: 'task-3',
-    title: 'Wayne Enterprises signature request',
-    desc: 'Send Docusign link for executive approval on pricing agreement.',
+    title: 'Arvind Mills agreement signature',
+    desc: 'Obtain signed contract copy from Rajesh Patel for the new autumn fabric dispatch.',
     status: 'done',
     priority: 'medium',
     leadId: 'lead-2',
@@ -178,8 +178,8 @@ const demoTasks: Task[] = [
   },
   {
     id: 'task-4',
-    title: 'Callback to Peter Parker',
-    desc: 'Follow up on freelancer pricing tier availability.',
+    title: 'Callback to Page Industries',
+    desc: 'Follow up on sample fabric quality feedback from Ramesh Nair.',
     status: 'todo',
     priority: 'low',
     leadId: 'lead-5',
@@ -188,7 +188,7 @@ const demoTasks: Task[] = [
   {
     id: 'task-5',
     title: 'Prepare presentation deck',
-    desc: 'Assemble slides for the quarterly sales target meeting.',
+    desc: 'Compile sales conversion metrics for the quarterly board meeting.',
     status: 'todo',
     priority: 'medium',
     leadId: '',
@@ -197,10 +197,10 @@ const demoTasks: Task[] = [
 ];
 
 const demoActivities: ActivityLog[] = [
-  { id: 'act-1', text: 'Stark Industries deal closed successfully', time: '2 hours ago', type: 'deal' },
-  { id: 'act-2', text: 'Sarah Connor moved to Proposal stage', time: '1 day ago', type: 'lead' },
-  { id: 'act-3', text: 'Task "Wayne Enterprises signature request" completed', time: '2 days ago', type: 'task' },
-  { id: 'act-4', text: 'Barry Allen deal marked as Closed Lost', time: '3 days ago', type: 'lead' }
+  { id: 'act-1', text: 'Raymond Garments bulk deal won successfully', time: '2 hours ago', type: 'deal' },
+  { id: 'act-2', text: 'Vardhman Textiles moved to Proposal stage', time: '1 day ago', type: 'lead' },
+  { id: 'act-3', text: 'Task "Arvind Mills agreement signature" completed', time: '2 days ago', type: 'task' },
+  { id: 'act-4', text: 'Trident Weaving lead closed as Lost', time: '3 days ago', type: 'lead' }
 ];
 
 const CrmContext = createContext<CrmContextType | undefined>(undefined);

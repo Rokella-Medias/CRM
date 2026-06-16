@@ -75,7 +75,7 @@ export const Contacts: React.FC = () => {
                       <td className="px-6 py-4.5 text-slate-600 dark:text-slate-400 text-sm">{c.email}</td>
                       <td className="px-6 py-4.5 text-slate-600 dark:text-slate-400 text-sm">{c.phone}</td>
                       <td className="px-6 py-4.5 text-slate-700 dark:text-slate-300 font-medium">{c.company}</td>
-                      <td className="px-6 py-4.5 text-emerald-600 dark:text-emerald-400 font-bold">${c.value.toLocaleString()}</td>
+                      <td className="px-6 py-4.5 text-emerald-600 dark:text-emerald-400 font-bold">₹{c.value.toLocaleString('en-IN')}</td>
                       <td className="px-6 py-4.5 text-slate-500 dark:text-slate-400 text-sm">{c.createdDate}</td>
                     </tr>
                   );

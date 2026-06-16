@@ -112,7 +112,7 @@ export const LeadModal: React.FC<LeadModalProps> = ({ isOpen, onClose, leadId })
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Deal Value ($)</label>
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Deal Value (₹)</label>
                 <input
                   type="number"
                   value={value}

@@ -75,7 +75,7 @@ export const Analytics: React.FC = () => {
   const barData = {
     labels: ['New', 'Contacted', 'Qualified', 'Proposal'],
     datasets: [{
-      label: 'Pipeline Value ($)',
+      label: 'Pipeline Value (₹)',
       data: [pipelineVal.new, pipelineVal.contacted, pipelineVal.qualified, pipelineVal.proposal],
       backgroundColor: '#2563eb',
       borderRadius: 6,
@@ -95,7 +95,7 @@ export const Analytics: React.FC = () => {
         grid: { color: gridColor },
         ticks: {
           color: textColor,
-          callback: (value: any) => '$' + (value >= 1000 ? value / 1000 + 'k' : value)
+          callback: (value: any) => '₹' + (value >= 100000 ? (value / 100000).toFixed(1) + 'L' : value >= 1000 ? (value / 1000).toFixed(0) + 'k' : value)
         }
       }
     }
@@ -139,7 +139,7 @@ export const Analytics: React.FC = () => {
         <div className="glass-panel rounded-2xl p-6 flex flex-col h-[380px]">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">Active Pipeline values</h3>
-            <span className="text-xs text-slate-400">Value aggregated ($)</span>
+            <span className="text-xs text-slate-400">Value aggregated (₹)</span>
           </div>
           <div className="relative flex-grow h-[280px]">
             <Bar data={barData} options={barOptions} />
@@ -179,8 +179,8 @@ export const Analytics: React.FC = () => {
               </tr>
               <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20">
                 <td className="px-6 py-4.5 font-semibold text-slate-800 dark:text-slate-200">Avg Deal Value</td>
-                <td className="px-6 py-4.5 text-slate-500 dark:text-slate-400">$10,000</td>
-                <td className="px-6 py-4.5 font-bold text-slate-800 dark:text-slate-200">${avgDealValue.toLocaleString()}</td>
+                <td className="px-6 py-4.5 text-slate-500 dark:text-slate-400">₹5,00,000</td>
+                <td className="px-6 py-4.5 font-bold text-slate-800 dark:text-slate-200">₹{avgDealValue.toLocaleString('en-IN')}</td>
                 <td className="px-6 py-4.5">
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200">Stable</span>
                 </td>
