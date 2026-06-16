@@ -478,18 +478,16 @@ export const CrmProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return;
     }
 
-    setLeads(prev => prev.map(l => {
-      if (l.id === id) {
-        const merged = { ...l, ...updatedFields };
-        if (updatedFields.status && updatedFields.status !== l.status) {
-          logActivity(`${l.name} (${l.company}) status updated to ${updatedFields.status.toUpperCase()}`, 'lead');
-        } else {
-          logActivity(`Lead ${l.name} details updated`, 'lead');
-        }
-        return merged;
+    const originalLead = leads.find(l => l.id === id);
+    setLeads(prev => prev.map(l => (l.id === id ? { ...l, ...updatedFields } : l)));
+
+    if (originalLead) {
+      if (updatedFields.status && updatedFields.status !== originalLead.status) {
+        await logActivity(`${originalLead.name} (${originalLead.company}) status updated to ${updatedFields.status.toUpperCase()}`, 'lead');
+      } else {
+        await logActivity(`Lead ${originalLead.name} details updated`, 'lead');
       }
-      return l;
-    }));
+    }
     triggerToast('Lead updated.', 'success');
   };
 
@@ -579,18 +577,16 @@ export const CrmProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return;
     }
 
-    setTasks(prev => prev.map(t => {
-      if (t.id === id) {
-        const merged = { ...t, ...updatedFields };
-        if (updatedFields.status && updatedFields.status !== t.status) {
-          logActivity(`Task "${t.title}" moved to ${updatedFields.status.toUpperCase()}`, 'task');
-        } else {
-          logActivity(`Task "${t.title}" details updated`, 'task');
-        }
-        return merged;
+    const originalTask = tasks.find(t => t.id === id);
+    setTasks(prev => prev.map(t => (t.id === id ? { ...t, ...updatedFields } : t)));
+
+    if (originalTask) {
+      if (updatedFields.status && updatedFields.status !== originalTask.status) {
+        await logActivity(`Task "${originalTask.title}" moved to ${updatedFields.status.toUpperCase()}`, 'task');
+      } else {
+        await logActivity(`Task "${originalTask.title}" details updated`, 'task');
       }
-      return t;
-    }));
+    }
     triggerToast('Task updated.', 'success');
   };
 
