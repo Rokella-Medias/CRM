@@ -8,6 +8,8 @@ export const Leads: React.FC = () => {
   const { leads, deleteLead } = useCrm();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
 
   // Filter States
   const [search, setSearch] = useState('');
@@ -201,7 +203,8 @@ export const Leads: React.FC = () => {
                           </button>
                           <button
                             onClick={() => {
-                              if (confirm(`Delete lead: ${lead.name}?`)) deleteLead(lead.id);
+                              setLeadToDelete(lead);
+                              setIsDeleteModalOpen(true);
                             }}
                             className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-500/10 dark:hover:text-rose-400 transition-all cursor-pointer"
                             title="Delete Lead"
@@ -225,6 +228,50 @@ export const Leads: React.FC = () => {
         onClose={() => setIsModalOpen(false)}
         leadId={selectedLeadId}
       />
+
+      {/* Delete Confirmation Modal */}
+      {isDeleteModalOpen && leadToDelete && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-fade-in">
+          <div className="glass-panel border-slate-200/80 dark:border-slate-800/80 rounded-2xl shadow-xl bg-white/95 dark:bg-[#111827]/95 p-6 w-full max-w-sm text-center space-y-4">
+            <div className="w-12 h-12 rounded-full bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto shadow-sm">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            
+            <div className="space-y-2">
+              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">
+                Confirm Deletion
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                Are you sure you want to delete lead <strong className="text-slate-700 dark:text-slate-350 font-semibold">"{leadToDelete.name}"</strong>? This action will permanently purge the client's pipeline history.
+              </p>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => {
+                  setIsDeleteModalOpen(false);
+                  setLeadToDelete(null);
+                }}
+                className="flex-1 py-2 px-4 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-350 rounded-xl font-bold text-xs transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  if (leadToDelete) {
+                    await deleteLead(leadToDelete.id);
+                  }
+                  setIsDeleteModalOpen(false);
+                  setLeadToDelete(null);
+                }}
+                className="flex-1 py-2 px-4 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs transition-all cursor-pointer"
+              >
+                Delete Lead
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
