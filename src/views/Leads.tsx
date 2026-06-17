@@ -4,7 +4,12 @@ import type { Lead } from '../context/CrmContext';
 import { Plus, Search, Edit3, Trash2 } from 'lucide-react';
 import { LeadModal } from '../components/LeadModal';
 
-export const Leads: React.FC = () => {
+interface LeadsProps {
+  globalSearch?: string;
+  setGlobalSearch?: (val: string) => void;
+}
+
+export const Leads: React.FC<LeadsProps> = ({ globalSearch, setGlobalSearch }) => {
   const { leads, deleteLead } = useCrm();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
@@ -12,7 +17,9 @@ export const Leads: React.FC = () => {
   const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
 
   // Filter States
-  const [search, setSearch] = useState('');
+  const [localSearch, setLocalSearch] = useState('');
+  const search = globalSearch !== undefined ? globalSearch : localSearch;
+  const setSearch = setGlobalSearch !== undefined ? setGlobalSearch : setLocalSearch;
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [sortField, setSortField] = useState('date');
@@ -30,8 +37,8 @@ export const Leads: React.FC = () => {
   // Filter & Sort Logic
   const filteredLeads = leads
     .filter(lead => {
-      const matchesSearch = lead.name.toLowerCase().includes(search.toLowerCase()) ||
-                            lead.company.toLowerCase().includes(search.toLowerCase());
+      const matchesSearch = (lead.name || '').toLowerCase().includes(search.toLowerCase()) ||
+                            (lead.company || '').toLowerCase().includes(search.toLowerCase());
       const matchesStatus = statusFilter === 'all' || lead.status === statusFilter;
       const matchesPriority = priorityFilter === 'all' || lead.priority === priorityFilter;
       return matchesSearch && matchesStatus && matchesPriority;
@@ -165,7 +172,7 @@ export const Leads: React.FC = () => {
                 </tr>
               ) : (
                 filteredLeads.map(lead => {
-                  const initials = lead.name.split(' ').map(n => n[0]).join('').slice(0, 2);
+                  const initials = lead.name ? lead.name.split(' ').filter(Boolean).map(n => n[0]).join('').slice(0, 2).toUpperCase() : '??';
                   return (
                     <tr key={lead.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
                       <td className="px-6 py-4.5">

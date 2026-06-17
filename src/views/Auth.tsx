@@ -8,7 +8,6 @@ import {
   Briefcase,
   Eye,
   EyeOff,
-  ShieldCheck,
   ArrowRight,
   AlertCircle
 } from 'lucide-react';
@@ -103,11 +102,11 @@ export const Auth: React.FC = () => {
       <div className="w-full max-w-[460px] p-6 z-10">
         {/* Brand Header */}
         <div className="flex flex-col items-center mb-8 text-center">
-          <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/25 mb-3">
-            <ShieldCheck className="w-6 h-6" />
+          <div className="w-16 h-16 rounded-2xl bg-white dark:bg-slate-800 flex items-center justify-center shadow-lg shadow-slate-200/60 dark:shadow-slate-900/60 mb-3 overflow-hidden border border-slate-100 dark:border-slate-700">
+            <img src="/logo.png" alt="Escrow CRM" className="w-12 h-12 object-contain" />
           </div>
           <h1 className="text-3xl font-black font-heading text-slate-800 dark:text-white tracking-tight">
-            ApexCRM
+            Escrow CRM
           </h1>
           <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
             Enterprise Client & Relationship Management Portal

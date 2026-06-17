@@ -68,8 +68,8 @@ export const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, taskId })
     onClose();
   };
 
-  // Filter leads that are active (non-won, non-lost) to associate with tasks
-  const activeLeads = leads.filter(l => l.status !== 'won' && l.status !== 'lost');
+  // Filter leads that are active (non-won, non-lost) to associate with tasks, or the currently selected lead
+  const activeLeads = leads.filter(l => l.status !== 'won' && l.status !== 'lost' || l.id === leadId);
 
   return (
     <div className="fixed inset-0 z-1000 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4">

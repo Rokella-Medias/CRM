@@ -1,6 +1,6 @@
 import React from 'react';
 import { useCrm } from '../context/CrmContext';
-import { IndianRupee, UserPlus, Briefcase, TrendingUp, ArrowUpRight, CheckCircle2, Calendar, Trash2, User } from 'lucide-react';
+import { IndianRupee, UserPlus, Briefcase, TrendingUp, ArrowUpRight, CheckCircle2, Calendar, Trash2, User, Shield } from 'lucide-react';
 import { Line, Doughnut } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -29,10 +29,12 @@ ChartJS.register(
 
 interface DashboardProps {
   onNavigate: (view: string) => void;
+  globalSearch?: string;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
-  const { leads, tasks, activities, theme, clearActivities } = useCrm();
+export const Dashboard: React.FC<DashboardProps> = ({ onNavigate, globalSearch = '' }) => {
+  const { leads, tasks, activities, theme, clearActivities, userPermissions } = useCrm();
+  const canViewLeads = userPermissions ? userPermissions.viewLeads : true;
 
   // Compute stats
   const wonLeads = leads.filter(l => l.status === 'won');
@@ -50,12 +52,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   const months = ['Mar', 'Apr', 'May', 'Jun'];
   const revenueData = [0, 0, 0, 0];
   leads.forEach(l => {
-    if (l.status === 'won') {
-      const month = new Date(l.createdDate).getMonth();
-      if (month === 2) revenueData[0] += l.value; // Mar
-      if (month === 3) revenueData[1] += l.value; // Apr
-      if (month === 4) revenueData[2] += l.value; // May
-      if (month === 5) revenueData[3] += l.value; // Jun
+    if (l.status === 'won' && l.createdDate) {
+      const dateObj = new Date(l.createdDate);
+      if (!isNaN(dateObj.getTime())) {
+        const month = dateObj.getMonth();
+        if (month === 2) revenueData[0] += l.value; // Mar
+        if (month === 3) revenueData[1] += l.value; // Apr
+        if (month === 4) revenueData[2] += l.value; // May
+        if (month === 5) revenueData[3] += l.value; // Jun
+      }
     }
   });
 
@@ -135,9 +140,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
 
   // High priority tasks
   const activeTasks = tasks.filter(t => t.status !== 'done');
+  const filteredTasks = activeTasks.filter(t => {
+    if (!globalSearch) return true;
+    return t.title.toLowerCase().includes(globalSearch.toLowerCase()) ||
+           (t.desc || '').toLowerCase().includes(globalSearch.toLowerCase());
+  });
   const priorityOrder = { high: 1, medium: 2, low: 3 };
-  activeTasks.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
-  const displayTasks = activeTasks.slice(0, 4);
+  filteredTasks.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+  const displayTasks = filteredTasks.slice(0, 4);
+
+  const filteredActivities = activities.filter(act => {
+    if (!globalSearch) return true;
+    return act.text.toLowerCase().includes(globalSearch.toLowerCase());
+  });
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -152,12 +167,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             </div>
           </div>
           <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-2xl font-extrabold font-heading text-slate-800 dark:text-slate-100">
-              ₹{totalRevenue.toLocaleString('en-IN')}
+            <span className={`text-2xl font-extrabold font-heading text-slate-800 dark:text-slate-100 ${!canViewLeads ? 'blur-xs select-none' : ''}`}>
+              {canViewLeads ? `₹${totalRevenue.toLocaleString('en-IN')}` : '₹9,99,99,999'}
             </span>
-            <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5">
-              <ArrowUpRight className="w-3.5 h-3.5" /> +12.5%
-            </span>
+            {canViewLeads ? (
+              <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5">
+                <ArrowUpRight className="w-3.5 h-3.5" /> +12.5%
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-[10px] bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded font-bold text-slate-400">Locked</span>
+            )}
           </div>
         </div>
 
@@ -170,12 +189,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             </div>
           </div>
           <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-2xl font-extrabold font-heading text-slate-800 dark:text-slate-100">
-              {activeLeadsCount}
+            <span className={`text-2xl font-extrabold font-heading text-slate-800 dark:text-slate-100 ${!canViewLeads ? 'blur-xs select-none' : ''}`}>
+              {canViewLeads ? activeLeadsCount : '99'}
             </span>
-            <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-0.5">
-              <ArrowUpRight className="w-3.5 h-3.5" /> +8.2%
-            </span>
+            {canViewLeads ? (
+              <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-0.5">
+                <ArrowUpRight className="w-3.5 h-3.5" /> +8.2%
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-[10px] bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded font-bold text-slate-400">Locked</span>
+            )}
           </div>
         </div>
 
@@ -188,12 +211,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             </div>
           </div>
           <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-2xl font-extrabold font-heading text-slate-800 dark:text-slate-100">
-              {dealsClosedCount}
+            <span className={`text-2xl font-extrabold font-heading text-slate-800 dark:text-slate-100 ${!canViewLeads ? 'blur-xs select-none' : ''}`}>
+              {canViewLeads ? dealsClosedCount : '99'}
             </span>
-            <span className="text-xs font-bold text-sky-600 dark:text-sky-400 flex items-center gap-0.5">
-              <ArrowUpRight className="w-3.5 h-3.5" /> +15.3%
-            </span>
+            {canViewLeads ? (
+              <span className="text-xs font-bold text-sky-600 dark:text-sky-400 flex items-center gap-0.5">
+                <ArrowUpRight className="w-3.5 h-3.5" /> +15.3%
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-[10px] bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded font-bold text-slate-400">Locked</span>
+            )}
           </div>
         </div>
 
@@ -206,38 +233,56 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             </div>
           </div>
           <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-2xl font-extrabold font-heading text-slate-800 dark:text-slate-100">
-              {conversionRate}%
+            <span className={`text-2xl font-extrabold font-heading text-slate-800 dark:text-slate-100 ${!canViewLeads ? 'blur-xs select-none' : ''}`}>
+              {canViewLeads ? `${conversionRate}%` : '99.9%'}
             </span>
-            <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5">
-              <ArrowUpRight className="w-3.5 h-3.5" /> +2.4%
-            </span>
+            {canViewLeads ? (
+              <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5">
+                <ArrowUpRight className="w-3.5 h-3.5" /> +2.4%
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-[10px] bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded font-bold text-slate-400">Locked</span>
+            )}
           </div>
         </div>
       </div>
 
       {/* Charts row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="glass-panel rounded-2xl p-6 lg:col-span-2 flex flex-col h-[380px]">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">Revenue Performance</h3>
-            <span className="text-xs text-slate-400">Monthly sales totals</span>
+      {canViewLeads ? (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="glass-panel rounded-2xl p-6 lg:col-span-2 flex flex-col h-[380px]">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">Revenue Performance</h3>
+              <span className="text-xs text-slate-400">Monthly sales totals</span>
+            </div>
+            <div className="relative flex-grow h-[280px]">
+              <Line data={lineChartData} options={lineChartOptions} />
+            </div>
           </div>
-          <div className="relative flex-grow h-[280px]">
-            <Line data={lineChartData} options={lineChartOptions} />
-          </div>
-        </div>
 
-        <div className="glass-panel rounded-2xl p-6 flex flex-col h-[380px]">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">Lead Stages</h3>
-            <span className="text-xs text-slate-400">Distribution stage</span>
-          </div>
-          <div className="relative flex-grow h-[280px]">
-            <Doughnut data={doughnutData} options={doughnutOptions} />
+          <div className="glass-panel rounded-2xl p-6 flex flex-col h-[380px]">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">Lead Stages</h3>
+              <span className="text-xs text-slate-400">Distribution stage</span>
+            </div>
+            <div className="relative flex-grow h-[280px]">
+              <Doughnut data={doughnutData} options={doughnutOptions} />
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="glass-panel rounded-2xl p-8 text-center flex flex-col items-center justify-center min-h-[200px] space-y-3">
+          <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 flex items-center justify-center shadow-inner">
+            <Shield className="w-6 h-6" />
+          </div>
+          <div className="space-y-1 max-w-sm mx-auto">
+            <h4 className="font-bold text-slate-850 dark:text-slate-100 text-base">Sales Charts Restricted</h4>
+            <p className="text-xs text-slate-400 dark:text-slate-500 leading-normal">
+              You do not have permission to view leads and revenue performance reports. Contact your administrator to adjust access.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Subgrid: Activity & Priority Tasks */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -254,12 +299,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             </button>
           </div>
           <div className="space-y-4 overflow-y-auto max-h-[250px] pr-2 flex-grow">
-            {activities.length === 0 ? (
+            {filteredActivities.length === 0 ? (
               <div className="text-center text-slate-400 py-12 text-sm">
-                No recent activity logs.
+                No matching activity logs.
               </div>
             ) : (
-              activities.slice(0, 5).map(act => {
+              filteredActivities.slice(0, 5).map(act => {
                 const getIcon = () => {
                   switch (act.type) {
                     case 'deal': return <CheckCircle2 className="w-4.5 h-4.5 text-emerald-500" />;

@@ -47,11 +47,33 @@ export interface ToastInfo {
   type: 'success' | 'error' | 'info';
 }
 
+export interface UserPermissions {
+  viewLeads: boolean;
+  manageLeads: boolean;
+  viewTasks: boolean;
+  manageTasks: boolean;
+  viewAnalytics: boolean;
+  manageSettings: boolean;
+}
+
+export interface TeamMember {
+  id: string;
+  ownerId: string;
+  email: string;
+  name: string;
+  role: string;
+  permissions: UserPermissions;
+}
+
 interface CrmContextType {
   leads: Lead[];
   contacts: Contact[];
   tasks: Task[];
   activities: ActivityLog[];
+  teamMembers: TeamMember[];
+  workspaceOwnerId: string;
+  userRole: string;
+  userPermissions: UserPermissions;
   theme: 'light' | 'dark';
   toast: ToastInfo | null;
   addLead: (lead: Omit<Lead, 'id' | 'createdDate'>) => Promise<void>;
@@ -60,6 +82,8 @@ interface CrmContextType {
   addTask: (task: Omit<Task, 'id'>) => Promise<void>;
   updateTask: (id: string, task: Partial<Task>) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
+  addTeamMember: (member: Omit<TeamMember, 'id' | 'ownerId'>) => Promise<void>;
+  deleteTeamMember: (id: string) => Promise<void>;
   resetDatabase: () => Promise<void>;
   clearActivities: () => Promise<void>;
   toggleTheme: () => void;
@@ -211,6 +235,17 @@ export const CrmProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [leads, setLeads] = useState<Lead[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [activities, setActivities] = useState<ActivityLog[]>([]);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [workspaceOwnerId, setWorkspaceOwnerId] = useState<string>('');
+  const [userRole, setUserRole] = useState<string>('owner');
+  const [userPermissions, setUserPermissions] = useState<UserPermissions>({
+    viewLeads: true,
+    manageLeads: true,
+    viewTasks: true,
+    manageTasks: true,
+    viewAnalytics: true,
+    manageSettings: true,
+  });
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [toast, setToast] = useState<ToastInfo | null>(null);
 
@@ -299,25 +334,37 @@ export const CrmProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setTasks(demoTasks);
       setActivities(demoActivities);
 
+      // Set seeded flag in localStorage
+      localStorage.setItem('crm_seeded_' + userId, 'true');
+
     } catch (err) {
       console.error('Error seeding demo data:', err);
       triggerToast('Error pre-populating sandbox database.', 'error');
     }
   }, [triggerToast]);
 
-  // 4. Derive contacts dynamically from won deals instead of syncing in useEffect
+  // 4. Derive contacts dynamically from won deals instead of syncing in useEffect (deduplicated by email)
   const contacts: Contact[] = React.useMemo(() => {
-    return leads
+    const unique: Record<string, Contact> = {};
+    leads
       .filter(l => l.status === 'won')
-      .map(l => ({
-        id: l.id,
-        name: l.name,
-        email: l.email,
-        phone: l.phone,
-        company: l.company,
-        value: l.value,
-        createdDate: l.createdDate
-      }));
+      .forEach(l => {
+        const emailKey = (l.email || '').trim().toLowerCase() || l.id;
+        if (!unique[emailKey]) {
+          unique[emailKey] = {
+            id: l.id,
+            name: l.name,
+            email: l.email,
+            phone: l.phone,
+            company: l.company,
+            value: l.value,
+            createdDate: l.createdDate
+          };
+        } else {
+          unique[emailKey].value += l.value;
+        }
+      });
+    return Object.values(unique);
   }, [leads]);
 
   // Theme loader (keeps theme in local storage since it is UI preferences only)
@@ -340,26 +387,88 @@ export const CrmProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setLeads([]);
       setTasks([]);
       setActivities([]);
+      setTeamMembers([]);
+      setWorkspaceOwnerId('');
+      setUserRole('owner');
+      setUserPermissions({
+        viewLeads: true,
+        manageLeads: true,
+        viewTasks: true,
+        manageTasks: true,
+        viewAnalytics: true,
+        manageSettings: true,
+      });
       return;
     }
 
     const fetchData = async () => {
       try {
+        let ownerId = user.id;
+        let role = 'owner';
+        let permissions: UserPermissions = {
+          viewLeads: true,
+          manageLeads: true,
+          viewTasks: true,
+          manageTasks: true,
+          viewAnalytics: true,
+          manageSettings: true,
+        };
+
+        // Check team membership
+        try {
+          const { data: membershipData, error: memberError } = await supabase
+            .from('team_members')
+            .select('*')
+            .eq('member_email', user.email)
+            .limit(1);
+
+          if (!memberError && membershipData && membershipData.length > 0) {
+            ownerId = membershipData[0].owner_id;
+            role = membershipData[0].role;
+            permissions = membershipData[0].permissions as UserPermissions;
+          } else {
+            // Check local fallback
+            const localTeamStr = localStorage.getItem('crm_local_team_' + user.id) || '[]';
+            const localTeam = JSON.parse(localTeamStr);
+            const localMatch = localTeam.find((m: any) => m.email.trim().toLowerCase() === user.email.trim().toLowerCase());
+            if (localMatch) {
+              ownerId = localMatch.ownerId;
+              role = localMatch.role;
+              permissions = localMatch.permissions;
+            }
+          }
+        } catch (err) {
+          console.warn('Supabase team_members check error, checking local fallback:', err);
+          const localTeamStr = localStorage.getItem('crm_local_team_' + user.id) || '[]';
+          const localTeam = JSON.parse(localTeamStr);
+          const localMatch = localTeam.find((m: any) => m.email.trim().toLowerCase() === user.email.trim().toLowerCase());
+          if (localMatch) {
+            ownerId = localMatch.ownerId;
+            role = localMatch.role;
+            permissions = localMatch.permissions;
+          }
+        }
+
+        setWorkspaceOwnerId(ownerId);
+        setUserRole(role);
+        setUserPermissions(permissions);
+
         // 1. Fetch leads
         const { data: dbLeads, error: leadsError } = await supabase
           .from('leads')
           .select('*')
-          .eq('user_id', user.id);
+          .eq('user_id', ownerId);
 
         if (leadsError) throw leadsError;
 
-        // If no leads exist, automatically seed demo data for the first launch
-        if (!dbLeads || dbLeads.length === 0) {
-          await seedDemoData(user.id);
+        // If no leads exist, automatically seed demo data for the first launch (only if never seeded before and owner)
+        const isSeeded = localStorage.getItem('crm_seeded_' + ownerId) === 'true';
+        if ((!dbLeads || dbLeads.length === 0) && !isSeeded && role === 'owner') {
+          await seedDemoData(ownerId);
           return;
         }
 
-        const formattedLeads = dbLeads.map((item) => ({
+        const formattedLeads = (dbLeads || []).map((item) => ({
           id: item.id,
           name: item.name,
           company: item.company,
@@ -376,7 +485,7 @@ export const CrmProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const { data: dbTasks, error: tasksError } = await supabase
           .from('tasks')
           .select('*')
-          .eq('user_id', user.id);
+          .eq('user_id', ownerId);
 
         if (tasksError) throw tasksError;
 
@@ -395,7 +504,7 @@ export const CrmProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const { data: dbActivities, error: activitiesError } = await supabase
           .from('activities')
           .select('*')
-          .eq('user_id', user.id)
+          .eq('user_id', ownerId)
           .order('id', { ascending: false });
 
         if (activitiesError) throw activitiesError;
@@ -407,6 +516,31 @@ export const CrmProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           type: item.type
         }));
         setActivities(formattedActivities);
+
+        // 4. Fetch team members list
+        try {
+          const { data: teamData, error: teamError } = await supabase
+            .from('team_members')
+            .select('*')
+            .eq('owner_id', ownerId);
+
+          if (!teamError && teamData) {
+            setTeamMembers(teamData.map(m => ({
+              id: m.id,
+              ownerId: m.owner_id,
+              email: m.member_email,
+              name: m.member_name,
+              role: m.role,
+              permissions: m.permissions as UserPermissions
+            })));
+          } else {
+            const localTeamStr = localStorage.getItem('crm_local_team_' + ownerId) || '[]';
+            setTeamMembers(JSON.parse(localTeamStr));
+          }
+        } catch (err) {
+          const localTeamStr = localStorage.getItem('crm_local_team_' + ownerId) || '[]';
+          setTeamMembers(JSON.parse(localTeamStr));
+        }
 
       } catch (err) {
         console.error('Error fetching data from Supabase:', err);
@@ -434,7 +568,7 @@ export const CrmProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       status: newLeadData.status,
       priority: newLeadData.priority,
       created_date: createdDate,
-      user_id: user.id
+      user_id: workspaceOwnerId || user.id
     };
 
     const { error } = await supabase.from('leads').insert([dbLead]);
@@ -470,7 +604,7 @@ export const CrmProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       .from('leads')
       .update(dbFields)
       .eq('id', id)
-      .eq('user_id', user.id);
+      .eq('user_id', workspaceOwnerId || user.id);
 
     if (error) {
       console.error('Supabase updateLead error:', error.message);
@@ -501,7 +635,7 @@ export const CrmProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       .from('leads')
       .delete()
       .eq('id', id)
-      .eq('user_id', user.id);
+      .eq('user_id', workspaceOwnerId || user.id);
 
     if (error) {
       console.error('Supabase deleteLead error:', error.message);
@@ -514,7 +648,7 @@ export const CrmProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       .from('tasks')
       .update({ lead_id: null })
       .eq('lead_id', id)
-      .eq('user_id', user.id);
+      .eq('user_id', workspaceOwnerId || user.id);
 
     setLeads(prev => prev.filter(l => l.id !== id));
     setTasks(prev => prev.map(t => t.leadId === id ? { ...t, leadId: '' } : t));
@@ -535,7 +669,7 @@ export const CrmProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       priority: newTaskData.priority,
       lead_id: newTaskData.leadId || null,
       due_date: newTaskData.dueDate,
-      user_id: user.id
+      user_id: workspaceOwnerId || user.id
     };
 
     const { error } = await supabase.from('tasks').insert([dbTask]);
@@ -569,7 +703,7 @@ export const CrmProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       .from('tasks')
       .update(dbFields)
       .eq('id', id)
-      .eq('user_id', user.id);
+      .eq('user_id', workspaceOwnerId || user.id);
 
     if (error) {
       console.error('Supabase updateTask error:', error.message);
@@ -600,7 +734,7 @@ export const CrmProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       .from('tasks')
       .delete()
       .eq('id', id)
-      .eq('user_id', user.id);
+      .eq('user_id', workspaceOwnerId || user.id);
 
     if (error) {
       console.error('Supabase deleteTask error:', error.message);
@@ -616,15 +750,16 @@ export const CrmProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // DB Resets
   const resetDatabase = async () => {
     if (!user) return;
+    const ownerId = workspaceOwnerId || user.id;
 
     try {
       // Clear user data
-      await supabase.from('leads').delete().eq('user_id', user.id);
-      await supabase.from('tasks').delete().eq('user_id', user.id);
-      await supabase.from('activities').delete().eq('user_id', user.id);
+      await supabase.from('leads').delete().eq('user_id', ownerId);
+      await supabase.from('tasks').delete().eq('user_id', ownerId);
+      await supabase.from('activities').delete().eq('user_id', ownerId);
 
       // Re-seed default
-      await seedDemoData(user.id);
+      await seedDemoData(ownerId);
       triggerToast('Sandbox database reset to default.', 'success');
     } catch (err) {
       console.error('Error resetting database:', err);
@@ -638,7 +773,7 @@ export const CrmProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const { error } = await supabase
       .from('activities')
       .delete()
-      .eq('user_id', user.id);
+      .eq('user_id', workspaceOwnerId || user.id);
 
     if (error) {
       console.error('Supabase clearActivities error:', error.message);
@@ -659,11 +794,97 @@ export const CrmProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     triggerToast(`Switched to ${nextTheme === 'light' ? 'Light' : 'Dark'} mode`, 'info');
   };
 
+  // Team CRUD
+  const addTeamMember = async (newMember: Omit<TeamMember, 'id' | 'ownerId'>) => {
+    if (!user) return;
+    
+    const ownerId = workspaceOwnerId || user.id;
+    const newId = 'member-' + Date.now();
+    const stateMember: TeamMember = {
+      ...newMember,
+      id: newId,
+      ownerId
+    };
+
+    try {
+      const dbMember = {
+        member_email: newMember.email,
+        member_name: newMember.name,
+        role: newMember.role,
+        permissions: newMember.permissions,
+        owner_id: ownerId
+      };
+      
+      const { error } = await supabase.from('team_members').insert([dbMember]);
+      if (error) throw error;
+      
+      const { data } = await supabase
+        .from('team_members')
+        .select('*')
+        .eq('owner_id', ownerId);
+      if (data) {
+        setTeamMembers(data.map(m => ({
+          id: m.id,
+          ownerId: m.owner_id,
+          email: m.member_email,
+          name: m.member_name,
+          role: m.role,
+          permissions: m.permissions as UserPermissions
+        })));
+      }
+    } catch (err) {
+      console.warn('Supabase addTeamMember error, saving locally:', err);
+      setTeamMembers(prev => {
+        const updated = [...prev, stateMember];
+        localStorage.setItem('crm_local_team_' + ownerId, JSON.stringify(updated));
+        return updated;
+      });
+    }
+
+    await logActivity(`Added Team Member: ${newMember.name} (${newMember.role})`, 'lead');
+    triggerToast('Team member added successfully.', 'success');
+  };
+
+  const deleteTeamMember = async (id: string) => {
+    if (!user) return;
+    const ownerId = workspaceOwnerId || user.id;
+    const target = teamMembers.find(m => m.id === id);
+    if (!target) return;
+
+    try {
+      if (id.includes('-') && id.length > 20) {
+        const { error } = await supabase
+          .from('team_members')
+          .delete()
+          .eq('id', id)
+          .eq('owner_id', ownerId);
+        if (error) throw error;
+      }
+      
+      setTeamMembers(prev => {
+        const updated = prev.filter(m => m.id !== id);
+        localStorage.setItem('crm_local_team_' + ownerId, JSON.stringify(updated));
+        return updated;
+      });
+    } catch (err) {
+      console.warn('Supabase deleteTeamMember error, removing locally:', err);
+      setTeamMembers(prev => {
+        const updated = prev.filter(m => m.id !== id);
+        localStorage.setItem('crm_local_team_' + ownerId, JSON.stringify(updated));
+        return updated;
+      });
+    }
+
+    await logActivity(`Removed Team Member: ${target.name}`, 'lead');
+    triggerToast('Team member removed.', 'info');
+  };
+
   return (
     <CrmContext.Provider value={{
-      leads, contacts, tasks, activities, theme, toast,
+      leads, contacts, tasks, activities, teamMembers, workspaceOwnerId, userRole, userPermissions, theme, toast,
       addLead, updateLead, deleteLead,
       addTask, updateTask, deleteTask,
+      addTeamMember, deleteTeamMember,
       resetDatabase, clearActivities, toggleTheme, triggerToast, logActivity
     }}>
       {children}

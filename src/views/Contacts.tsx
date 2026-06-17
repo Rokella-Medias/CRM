@@ -2,14 +2,21 @@ import React, { useState } from 'react';
 import { useCrm } from '../context/CrmContext';
 import { Search } from 'lucide-react';
 
-export const Contacts: React.FC = () => {
+interface ContactsProps {
+  globalSearch?: string;
+  setGlobalSearch?: (val: string) => void;
+}
+
+export const Contacts: React.FC<ContactsProps> = ({ globalSearch, setGlobalSearch }) => {
   const { contacts } = useCrm();
-  const [search, setSearch] = useState('');
+  const [localSearch, setLocalSearch] = useState('');
+  const search = globalSearch !== undefined ? globalSearch : localSearch;
+  const setSearch = setGlobalSearch !== undefined ? setGlobalSearch : setLocalSearch;
 
   const filteredContacts = contacts.filter(contact => {
-    return contact.name.toLowerCase().includes(search.toLowerCase()) ||
-           contact.company.toLowerCase().includes(search.toLowerCase()) ||
-           contact.email.toLowerCase().includes(search.toLowerCase());
+    return (contact.name || '').toLowerCase().includes(search.toLowerCase()) ||
+           (contact.company || '').toLowerCase().includes(search.toLowerCase()) ||
+           (contact.email || '').toLowerCase().includes(search.toLowerCase());
   });
 
   return (
@@ -61,7 +68,7 @@ export const Contacts: React.FC = () => {
                 </tr>
               ) : (
                 filteredContacts.map(c => {
-                  const initials = c.name.split(' ').map(n => n[0]).join('').slice(0, 2);
+                  const initials = c.name ? c.name.split(' ').filter(Boolean).map(n => n[0]).join('').slice(0, 2).toUpperCase() : '??';
                   return (
                     <tr key={c.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
                       <td className="px-6 py-4.5">

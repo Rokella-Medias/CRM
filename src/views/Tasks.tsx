@@ -4,7 +4,12 @@ import type { Task } from '../context/CrmContext';
 import { Plus, Clock, Edit2, Trash2 } from 'lucide-react';
 import { TaskModal } from '../components/TaskModal';
 
-export const Tasks: React.FC = () => {
+interface TasksProps {
+  globalSearch?: string;
+  setGlobalSearch?: (val: string) => void;
+}
+
+export const Tasks: React.FC<TasksProps> = ({ globalSearch = '' }) => {
   const { tasks, leads, updateTask, deleteTask } = useCrm();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
@@ -63,7 +68,13 @@ export const Tasks: React.FC = () => {
       {/* Kanban Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-start flex-grow min-h-[500px]">
         {columns.map(col => {
-          const colTasks = tasks.filter(t => t.status === col.status);
+          const colTasks = tasks
+            .filter(t => t.status === col.status)
+            .filter(t => {
+              if (!globalSearch) return true;
+              return (t.title || '').toLowerCase().includes(globalSearch.toLowerCase()) ||
+                     (t.desc || '').toLowerCase().includes(globalSearch.toLowerCase());
+            });
           
           return (
             <KanbanColumn
@@ -116,6 +127,7 @@ const KanbanColumn: React.FC<ColumnProps> = ({
   onEdit,
   onDelete
 }) => {
+  const { updateTask } = useCrm();
   const [isDragOver, setIsDragOver] = useState(false);
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -196,9 +208,18 @@ const KanbanColumn: React.FC<ColumnProps> = ({
                 )}
 
                 <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800/50 pt-3 mt-1 text-[11px] text-slate-400">
-                  <div className="flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5" />
-                    <span>{task.dueDate}</span>
+                  <div className="flex items-center gap-1 flex-grow overflow-hidden" title={`Due: ${task.dueDate}`}>
+                    <Clock className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                    <select
+                      value={task.status}
+                      onChange={(e) => updateTask(task.id, { status: e.target.value as Task['status'] })}
+                      className="text-[10px] bg-slate-100 dark:bg-slate-800 border-none rounded px-1 py-0.5 font-bold text-slate-500 dark:text-slate-405 outline-none cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700/80 transition-colors w-full max-w-[85px] truncate"
+                    >
+                      <option value="todo">To Do</option>
+                      <option value="progress">In Progress</option>
+                      <option value="review">In Review</option>
+                      <option value="done">Completed</option>
+                    </select>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <button
